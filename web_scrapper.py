@@ -3,7 +3,13 @@ from typing import Union
 import requests
 from bs4 import BeautifulSoup
 
-from manage_db import POLISH_NAMES
+
+def load_polish_names():
+    with open('imiona_polskie.txt', 'r', encoding='UTF-8') as file:
+        return file.read().splitlines()
+
+
+POLISH_NAMES = load_polish_names()
 
 
 # Remove polish signs from names

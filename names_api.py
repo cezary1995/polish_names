@@ -2,7 +2,7 @@ from os import getenv
 
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Form
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -25,6 +25,19 @@ class NameItem(BaseModel):
 db = Database(getenv("DATABASE"))
 
 
+@app.get("/", response_class=HTMLResponse)
+def main_page(request: Request) -> object:
+    return templates.TemplateResponse("main_page.html", {"request": request})
+
+
+@app.post("/")
+def get_name_info(request: Request, name=Form(...)) -> object:
+    data_name = db.get_name_row_by_value(name.capitalize().rstrip())
+    n, origin, meaning = data_name
+    single_name_values = {'name': n, 'origin_value': origin, 'meaning_value': meaning}
+    return templates.TemplateResponse("name_info.html", {"request": request, "name": single_name_values})
+
+
 @app.get("/names/table", response_class=HTMLResponse)
 def get_table_names(request: Request) -> object:
     """By declaring response_class=HTMLResponse
@@ -33,25 +46,8 @@ def get_table_names(request: Request) -> object:
     return templates.TemplateResponse("table_names.html", {"request": request, "names": db_names})
 
 
-@app.get("/names/list", response_class=HTMLResponse)
-def get_list_names(request: Request) -> object:
-    """By declaring response_class=HTMLResponse
-     the docs UI will be able to know that the response will be HTML."""
-    db_names = db.get_just_list_name()
-    return templates.TemplateResponse("list_names.html", {"request": request, "names": db_names})
-
-
-@app.post("/name/is_polish")
-def check_if_polish_name(item: NameItem) -> dict:
-    db_names = db.get_dict_names().values()
-    # konwersja z jsona na dict pythonowy
-    item_dict = item.dict()
-    return {"name_value": item_dict["name_value"].capitalize(),
-            "is_polish": True if item_dict["name_value"].capitalize() in db_names else False}
-
-
 @app.get("/name/{item_id}")
-def get_name_by_id(request: Request, item_id: int):
+def get_name_by_id(request: Request, item_id: int) -> object:
     data_name = db.get_name_by_id(item_id)
     name = data_name[0]
     origin = data_name[1]
